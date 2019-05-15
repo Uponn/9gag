@@ -3,11 +3,12 @@ package ninegag.javaee.controllers;
 
 import ninegag.javaee.models.dto.UserLoginDTO;
 import ninegag.javaee.models.dto.UserRegisterDTO;
+import ninegag.javaee.models.dto.UserSessionDTO;
 import ninegag.javaee.models.pojo.User;
 import ninegag.javaee.models.repositories.UserRepo;
 import ninegag.javaee.util.ResponseMsg;
-import ninegag.javaee.util.exceptions.AlreadyTakenException;
-import ninegag.javaee.util.exceptions.InvalidInputException;
+import ninegag.javaee.util.SessionManager;
+import ninegag.javaee.util.exceptions.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.servlet.http.HttpSession;
 import java.time.LocalDateTime;
 
 
@@ -29,7 +31,10 @@ public class UserController extends BaseController{
     BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
 
     @PostMapping(value = "/register")
-    public Object registerUser(@RequestBody UserRegisterDTO userRegisterDTO) throws InvalidInputException {
+    public Object registerUser(@RequestBody UserRegisterDTO userRegisterDTO, HttpSession session) throws BaseException {
+        if (SessionManager.isLogged(session)){
+            throw new AlreadyLoggedException("You cannot do that while you are logged.");
+        }
         validateRegisterDetails(userRegisterDTO);
         if (!userRepo.existsByUsername(userRegisterDTO.getUsername()) && !userRepo.existsByEmail(userRegisterDTO.getEmail())){
             User user = new User(userRegisterDTO.getFullName(), userRegisterDTO.getUsername(),
@@ -43,16 +48,31 @@ public class UserController extends BaseController{
         }
     }
     @PostMapping(value = "/login")
-    public Object loginUser(@RequestBody UserLoginDTO userLoginDTO) throws InvalidInputException{
+    public Object loginUser(@RequestBody UserLoginDTO userLoginDTO, HttpSession session) throws BaseException {
+        if (SessionManager.isLogged(session)){
+            throw new AlreadyLoggedException("You are already logged in");
+        }
         validateLoginDetails(userLoginDTO);
         if (userRepo.existsByUsername(userLoginDTO.getUsername())) {
             User dbUser = userRepo.getByUsername(userLoginDTO.getUsername());
             if (encoder.matches(userLoginDTO.getPassword(), dbUser.getPassword())){
-                //TODO add session
-                return dbUser;
+                UserSessionDTO userSessionDTO = dbUser.convertToUserSessionDTO();
+                SessionManager.logUser(session, userSessionDTO);
+                return new ResponseMsg("Login was successful", HttpStatus.OK.value(), LocalDateTime.now());
+            }else {
+                throw new InvalidInputException("Invalid Username or Password");
             }
+        }else{
+            throw new InvalidInputException("Invalid Username or Password");
         }
-        return "Something went wrong";
+    }
+    @PostMapping(value = "logout")
+    public Object logout(HttpSession session) throws NotLoggedException{
+        if (SessionManager.isLogged(session)){
+            session.invalidate();
+            return new ResponseMsg("You've successfully logged out", HttpStatus.OK.value(), LocalDateTime.now());
+        }
+        throw new NotLoggedException("You are not logged in.");
     }
 
     private void validateLoginDetails(UserLoginDTO user) throws InvalidInputException{
@@ -100,7 +120,7 @@ public class UserController extends BaseController{
         if (!email.matches( EMAIL_VERIFICATION )){
             throw new InvalidInputException("Please enter a valid email address.");
         }
-        if (age <= 0 || age > 120){
+        if (age <= 0 || age > 122){ //122 was the oldest person ever to live
             throw new InvalidInputException("Please enter a valid age.");
         }
 

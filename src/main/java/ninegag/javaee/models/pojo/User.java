@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import ninegag.javaee.models.dto.UserSessionDTO;
 
 import javax.persistence.*;
 
@@ -29,5 +30,9 @@ public class User {
         this.password = password;
         this.email = email;
         this.age = age;
+    }
+
+    public UserSessionDTO convertToUserSessionDTO(){
+        return new UserSessionDTO(this.getId(), this.getUsername(), this.getEmail());
     }
 }
