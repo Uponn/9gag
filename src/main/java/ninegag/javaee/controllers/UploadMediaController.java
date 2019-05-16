@@ -32,7 +32,7 @@ public class UploadMediaController extends BaseController{
         if (!SessionManager.isLogged(session)){
             throw new NotLoggedException("You have to be logged to do that.");
         }
-        downloadFileToServer(file);
+        saveFileToServer(file);
         setFileFields(file, session);
         return new ResponseMsg("Media uploaded successfully", HttpStatus.OK.value(), LocalDateTime.now());
     }
@@ -45,7 +45,7 @@ public class UploadMediaController extends BaseController{
         mediaRepo.save(media);
     }
 
-    private void downloadFileToServer(MultipartFile file) throws IOException {
+    private void saveFileToServer(MultipartFile file) throws IOException {
         byte[] bytes = file.getBytes();
         File newFile = new File("D:\\test\\" + file.getOriginalFilename());
         FileOutputStream fos = new FileOutputStream(newFile);
