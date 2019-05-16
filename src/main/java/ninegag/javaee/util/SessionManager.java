@@ -21,4 +21,7 @@ public class SessionManager {
         session.setAttribute(LOGGED, true);
         session.setAttribute(USER, user);
     }
+    public static long getUserId(HttpSession session){
+        return ((UserSessionDTO) session.getAttribute(USER)).getId();
+    }
 }
