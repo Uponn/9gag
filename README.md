@@ -7,4 +7,6 @@ This project is an imitation of the famous site - 9gag. It would only be a backe
 
 - Session and the functionality around it, Logout
 
-- UploadMediaController for uploading files to server and DB
+- UploadController for uploading files to server and DB
+
+- Browsing controller(here I will be recreating the /hot, /trending and /fresh tabs)

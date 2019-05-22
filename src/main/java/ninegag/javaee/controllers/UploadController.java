@@ -21,13 +21,14 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 
 @RestController
-public class UploadMediaController extends BaseController{
+public class UploadController extends BaseController{
     @Autowired
     UserRepo userRepo;
     @Autowired
     MediaRepo mediaRepo;
 
     @PostMapping(value = "/upload")
+
     public Object uploadFile(@RequestParam("file") MultipartFile file, HttpSession session) throws IOException, NotLoggedException{
         if (!SessionManager.isLogged(session)){
             throw new NotLoggedException("You have to be logged to do that.");
@@ -40,6 +41,7 @@ public class UploadMediaController extends BaseController{
     private void setFileFields(MultipartFile file, HttpSession session) {
         Media media = new Media();
         User user = userRepo.getById(SessionManager.getUserId(session));
+        media.setTimeUploaded(LocalDateTime.now());
         media.setDir("D:\\test\\" + file.getOriginalFilename());
         media.setAuthor(user.getUsername());
         mediaRepo.save(media);
